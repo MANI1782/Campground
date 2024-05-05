@@ -3,11 +3,12 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
-const { campgroundSchema } = require('./schemas.js');
 const catchAsync = require('./utils/catchAsync');
-const ExpressError = require('./utils/ExpressError');
+const ExpressError = require("./utils/ExpressError");
 const methodOverride = require('method-override');
 const Campground = require('./models/campground');
+const Review = require("./models/reviews");
+const Joi = require('joi');
 
 
 // MONGODB CONNECTION
@@ -43,12 +44,12 @@ app.get("/", (req, res) => {
 })
 
 // CAMPGROUND ROUTE
-app.get("/campgrounds", async (req, res) => {
+app.get("/campgrounds", catchAsync(async (req, res) => {
     const campgrounds = await Campground.find({});
     res.render("campgrounds/index", { campgrounds })
 
 
-})
+}))
 
 // NEW CAMPGROUND
 app.get("/campgrounds/new", (req, res, next) => {
@@ -58,61 +59,106 @@ app.get("/campgrounds/new", (req, res, next) => {
 
 // POST NEW CAMPGROUND
 
-app.post("/campgrounds", async (req, res, next) => {
-    try {
-        const campground = new Campground(req.body.campground);
-        await campground.save();
-        res.redirect(`/campgrounds/${campground.id}`);
-
-    } catch (e) {
-        next(e)
-
+app.post("/campgrounds", catchAsync(async (req, res, next) => {
+    const campgroundSchema = Joi.object({
+        campground: Joi.object({
+            title: Joi.string().required(),
+            price: Joi.number().required().min(0),
+        }).required()
+    })
+    const result = campgroundSchema.validate(req.body);
+    if (result.error) {
+        throw new ExpressError(result.error.details, 400)
     }
 
 
-})
+    const campground = new Campground(req.body.campground);
+    await campground.save();
+    res.redirect(`/campgrounds/${campground.id}`);
+
+
+
+
+}))
+
 
 // UPDATE CAMPGROUND
 
-app.get("/campgrounds/:id/edit", async (req, res) => {
+app.get("/campgrounds/:id/edit", catchAsync(async (req, res) => {
     const campground = await Campground.findById(req.params.id);
     res.render("campgrounds/edit", { campground })
-})
+}))
 // PUT UPDATE CAMPGROUND
 
-app.put("/campgrounds/:id", async (req, res) => {
+app.put("/campgrounds/:id", catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground })
 
     res.redirect(`/campgrounds/${campground._id}`)
 
-})
+}))
 
 
 // CAMPGROUND DELETE
 
-app.delete("/campgrounds/:id", async (req, res) => {
+app.delete("/campgrounds/:id", catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndDelete(id);
     res.redirect("/campgrounds")
 
 
 
-})
+}))
+
+//CAMPGROUND REVIEW DELETE
+
+app.delete("/campgrounds/:id/reviews/:reviewId", catchAsync(async (req, res) => {
+    const { id, reviewId } = req.params;
+    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    Review.findByIdAndDelete(reviewId);
+    res.redirect(`/campgrounds/${id}`);
+
+
+}))
+
+
+//Posting reviews
+
+app.post("/campgrounds/:id/reviews", catchAsync(async (req, res) => {
+    const campground = await Campground.findById(req.params.id);
+    const review = new Review(req.body.review);
+    campground.reviews.push(review);
+    await review.save();
+    await campground.save();
+    res.redirect(`/campgrounds/${campground._id}`);
+}))
+
+
+
+// CAMPGROUND ID GET
+app.get("/campgrounds/:id", catchAsync(async (req, res) => {
+    const campground = await Campground.findById(req.params.id).populate("reviews");
+    console.log(campground)
+    res.render("campgrounds/show", { campground })
+}))
+
+
+
+
 
 // ERROR HANDLER
+
+app.all("*", (req, res, next) => {
+    next(new ExpressError("404", "Page not found"))
+})
 
 // ERROR HANDLER
 app.use((err, req, res, next) => {
-    console.error(err); // Log the error for debugging
-    res.status(500).send("Internal Server Error"); // Send a generic error message to the client
-})
+    const { statusCode = 500 } = err;
+    if (!err.message) err.message = "Something went wrong"
+    res.status(statusCode).render("error", { err });
 
-// CAMPGROUND ID GET
-app.get("/campgrounds/:id", async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
-    res.render("campgrounds/show", { campground })
-})
+});
 
 
 app.listen(3000, (req, res) => {
