@@ -20,9 +20,31 @@ const seeds = async () => {
     for (let i = 0; i < 50; i++) {
         const random = Math.floor(Math.random() * 200)
         const c = new Campground({
+            author: "663c91c78f4e058434e28fc5",
             location: `${cities[random].city} , ${cities[random].state}`,
             title: `${sample(descriptors)} ${sample(places)}`,
-            images: `https://source.unsplash.com/collection/9046579/480x480`,
+            images: [
+
+
+                {
+                    url: 'https://res.cloudinary.com/drqpxweep/image/upload/v1715451443/YelpCamp/f41gn7rf6t0ushxscqiv.avif',
+                    filename: 'YelpCamp/f41gn7rf6t0ushxscqiv',
+
+                },
+                {
+                    url: 'https://res.cloudinary.com/drqpxweep/image/upload/v1715451443/YelpCamp/ec3qjnpy94yjzazk7udv.avif',
+                    filename: 'YelpCamp/ec3qjnpy94yjzazk7udv',
+
+                },
+                {
+                    url: 'https://res.cloudinary.com/drqpxweep/image/upload/v1715451443/YelpCamp/rfajqhnymc5rb19jow8o.avif',
+                    filename: 'YelpCamp/rfajqhnymc5rb19jow8o',
+
+                }
+            ],
+
+
+
             description: " Lorem ipsum dolor sit, amet consectetur adipisicing elit. Sequi earum, consequatur expedita quis odio perspiciatis voluptates esse fuga consequuntur voluptatem cumque voluptate corporis quidem? Esse nihil quia nam perspiciatis iusto?"
 
 
@@ -38,3 +60,5 @@ const seeds = async () => {
 seeds().then(() => {
     mongoose.connection.close()
 })
+
+

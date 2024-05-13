@@ -1,3 +1,9 @@
+
+
+if (process.env.NODE_ENV !== "production") {
+    require('dotenv').config();
+}
+
 //ALL IMPORTS
 const express = require('express');
 const path = require('path');
@@ -9,7 +15,21 @@ const methodOverride = require('method-override');
 const Campground = require('./models/campground');
 const Review = require("./models/reviews");
 const Joi = require('joi');
+const session = require("express-session")
 
+const flash = require("connect-flash")
+
+const campgrounds = require("./routes/campgrounds");
+const reviews = require("./routes/reviews");
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const User = require('./models/user');
+
+
+
+const userRoutes = require('./routes/users');
+const campgroundRoutes = require('./routes/campgrounds');
+const reviewRoutes = require('./routes/reviews');
 
 // MONGODB CONNECTION
 const db = mongoose.connect('mongodb://localhost:27017/campGroundDB')
@@ -34,48 +54,71 @@ app.set("views", path.join(__dirname, "views"))
 app.use(express.urlencoded({ extended: true }))
 app.use(methodOverride("_method"))
 // EJS MATE SET
-app.engine("ejs", ejsMate)
+app.engine("ejs", ejsMate);
+app.use(express.static('public'))
+
+
+const sessionConfig = {
+    secret: "thisshouldbeabettersecreat",
+    resave: false,
+    saveUninitialized: true,
+    cookies: {
+        httpOnly: true
+        ,
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24 * 7
+    }
+
+}
+
+app.use(session(sessionConfig))
+app.use(flash());
+
+
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    next();
+})
+
+
+app.use("/campgrounds", campgrounds)
+app.use("/campgrounds/:id/reviews", reviews)
+app.use('/', userRoutes);
 
 
 
-//CAMPGROUND REVIEW DELETE
-
-app.delete("/campgrounds/:id/reviews/:reviewId", catchAsync(async (req, res) => {
-    const { id, reviewId } = req.params;
-    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
-    Review.findByIdAndDelete(reviewId);
-    res.redirect(`/campgrounds/${id}`);
-
-
-}))
-
-
-//Posting reviews
-
-app.post("/campgrounds/:id/reviews", catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id);
-    const review = new Review(req.body.review);
-    campground.reviews.push(review);
-    await review.save();
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`);
-}))
 
 
 
-// CAMPGROUND ID GET
-app.get("/campgrounds/:id", catchAsync(async (req, res) => {
-    const campground = await Campground.findById(req.params.id).populate("reviews");
-    console.log(campground)
-    res.render("campgrounds/show", { campground })
-}))
+// HOME ROUTE
+app.get("/", (req, res) => {
+    res.render("home")
+
+})
 
 
 
+
+
+
+
+app.get("/fakeuser", async (req, res) => {
+    const user = new User({ email: "maniasssadfh@gmail.com", username: "masssadddfnlk" })
+    const newUser = await User.register(user, "manish")
+    res.send(newUser)
+})
 
 
 // ERROR HANDLER
-
 app.all("*", (req, res, next) => {
     next(new ExpressError("404", "Page not found"))
 })

@@ -9,7 +9,7 @@
 
 
 
-            <form action="/campgrounds/<%=campground._id %>?_method=PUT" method="POST">
+            <form action="/campgrounds/<%=campground._id %>?_method=PUT" method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="title" class="form-lable">Title</label>
                     <input id="title" class="form-control" type="text" name="campground[title]" placeholder=""
@@ -24,10 +24,13 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label" for="image">Image URL</label>
-                    <input class="form-control" id="image" type="text" name="campground[images]"
-                        value="<%=campground.images %>">
+                    <div class="form-file custom-file">
+                        <input type="file" class="form-file-input" id="image" name="image" multiple>
+                        <label class="form-file-label" for="image">
+                            <span class="form-file-text custom-file-label"> Add more images...</span>
 
+                        </label>
+                    </div>
 
                 </div>
                 <div class="mb-3">
@@ -48,14 +51,33 @@
 
                 </div>
 
-                <button class="btn btn-info mb-3" type="submit">Update CAMPGROUND</button>
-            </form>
 
+                < <div class="mb-3">
+                    <% campground.images.forEach(function(img, i) { %>
 
-
-            <a href="/campgrounds/<%=campground._id %>">Back to Campground</a>
-
-
+                        <img src="<%=img.thumbnail %>" class="img-thumbnail" alt="">
+                        <div class="form-check-inline">
+                            <input type="checkbox" id="image-<%=i%>" name="deleteImages[]" value="<%=img.filename%>">
+                        </div>
+                        <label for="image-<%=i%>">Delete?</label>
+                        <% })%>
         </div>
+
+
+
+
+        <div class="mb-3">
+            <button class="btn btn-info">Update Campground</button>
+        </div>
+
+
+        </form>
+
+
+
+        <a href="/campgrounds/<%=campground._id %>">Back to Campground</a>
+
+
+    </div>
 
     </div>
