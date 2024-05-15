@@ -18,7 +18,7 @@ const Joi = require('joi');
 const session = require("express-session")
 
 const flash = require("connect-flash")
-
+const helmet = require("helmet")
 const campgrounds = require("./routes/campgrounds");
 const reviews = require("./routes/reviews");
 const passport = require('passport');
@@ -27,12 +27,16 @@ const User = require('./models/user');
 
 
 
+
+
 const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 
+
+
 // MONGODB CONNECTION
-const db = mongoose.connect('mongodb://localhost:27017/campGroundDB')
+const db = mongoose.connect('mongodb+srv://manish:manish@cluster3.p3okkmq.mongodb.net/CampGround')
     .then(() => {
         console.log("Connected Database")
     })
@@ -56,6 +60,7 @@ app.use(methodOverride("_method"))
 // EJS MATE SET
 app.engine("ejs", ejsMate);
 app.use(express.static('public'))
+app.use(helmet({ contentSecurityPolicy: false }))
 
 
 const sessionConfig = {

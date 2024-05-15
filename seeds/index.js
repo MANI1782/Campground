@@ -5,7 +5,7 @@ const { places, descriptors } = require("./seedHelpers")
 
 
 // MONGODB CONNECTION
-const db = mongoose.connect('mongodb://localhost:27017/campGroundDB')
+const db = mongoose.connect('mongodb+srv://manish:manish@cluster3.p3okkmq.mongodb.net/CampGround')
     .then(() => {
         console.log("Connected Database")
     })
@@ -17,12 +17,19 @@ const sample = array => array[Math.floor(Math.random() * array.length)];
 const seeds = async () => {
 
     await Campground.deleteMany({});
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 20; i++) {
         const random = Math.floor(Math.random() * 200)
         const c = new Campground({
             author: "663c91c78f4e058434e28fc5",
             location: `${cities[random].city} , ${cities[random].state}`,
             title: `${sample(descriptors)} ${sample(places)}`,
+            geometry: {
+                type: "Point",
+                coordinates: [
+                    cities[random].longitude,
+                    cities[random].latitude,
+                ]
+            },
             images: [
 
 
@@ -36,11 +43,7 @@ const seeds = async () => {
                     filename: 'YelpCamp/ec3qjnpy94yjzazk7udv',
 
                 },
-                {
-                    url: 'https://res.cloudinary.com/drqpxweep/image/upload/v1715451443/YelpCamp/rfajqhnymc5rb19jow8o.avif',
-                    filename: 'YelpCamp/rfajqhnymc5rb19jow8o',
 
-                }
             ],
 
 
